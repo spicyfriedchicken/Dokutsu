@@ -1,4 +1,4 @@
-./graphics
-./.vscode
-./map
-.main.o
+/graphics
+/.vscode
+/map
+main.o
