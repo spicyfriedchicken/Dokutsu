@@ -1,4 +1,4 @@
-#include "/opt/homebrew/include/SDL2/SDL.h"
+#include <SDL2/SDL.h>
 #include <iostream>
 #include "settings.h"
 #include "level.h"
@@ -12,7 +12,7 @@ public:
 
     Game() {
 
-        // SDL2 Boilerplate 
+        // SDL2 Boilerplate
 
         if (SDL_Init(SDL_INIT_VIDEO) < 0) {
             std::cerr << "SDL Could not initialize! SDL_Error:" << SDL_GetError() <<"\n";
@@ -21,7 +21,7 @@ public:
 
         window = SDL_CreateWindow("Dōkutsu",
                                 SDL_WINDOWPOS_CENTERED,
-                                SDL_WINDOWPOS_CENTERED, 
+                                SDL_WINDOWPOS_CENTERED,
                                 WIDTH, HEIGHT,
                                 SDL_WINDOW_SHOWN);
         if (!window) {
@@ -35,11 +35,11 @@ public:
             std::cerr << "SDL Renderer could not be created! SDL_Error:" << SDL_GetError() << "\n";
             SDL_DestroyWindow(window);
             SDL_Quit();
-            exit(1);  
+            exit(1);
         }
-        
+
         // Level Initialization, Gameplay, Etc.
-        level = std::make_unique<Level>(renderer);  
+        level = std::make_unique<Level>(renderer);
     }
 
     ~Game() {
@@ -58,40 +58,47 @@ void run() {
     Camera camera(renderer, level->getVisibleSprites());
     UI ui(renderer, level->getPlayer());
 
-    while (running) {
-        frameStart = SDL_GetTicks();
+        while (running) {
+            frameStart = SDL_GetTicks();
 
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
+            while (SDL_PollEvent(&event)) {
+                if (event.type == SDL_QUIT) {
+                    running = false;
+                }
+            }
+
+            if (!level->getPlayer()->isAlive()) {
+                std::cout << "Player has died. Ending game loop.\n";
                 running = false;
+                continue;
+            }
+
+            level->getPlayer()->handleInput();
+            level->update();
+            camera.centerOn(level->getPlayer()->getRect());
+
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            SDL_RenderClear(renderer);
+
+            camera.draw();
+            ui.update();
+            ui.render();
+
+            SDL_RenderPresent(renderer);
+
+            frameTime = SDL_GetTicks() - frameStart;
+            if (frameDelay > frameTime) {
+                SDL_Delay(frameDelay - frameTime);
             }
         }
 
-        level->getPlayer()->handleInput();  
-        level->update(); 
-        camera.centerOn(level->getPlayer()->getRect());
-
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
-
-        camera.draw();                     // Draw floor + visible sprites (uses offset)
-        ui.update();                       // Update HP/MP based on player stats
-        ui.render();                       // Draw UI (non-offset rendering)
-
-        SDL_RenderPresent(renderer);
-
-        frameTime = SDL_GetTicks() - frameStart;
-        if (frameDelay > frameTime) {
-            SDL_Delay(frameDelay - frameTime);
-        }
-    }
 }
 
 
-private: 
+private:
     SDL_Window* window = nullptr;
     SDL_Renderer* renderer = nullptr;
-    std::unique_ptr<Level> level;  
+    std::unique_ptr<Level> level;
 
 };
 

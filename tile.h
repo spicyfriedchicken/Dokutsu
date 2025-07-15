@@ -1,8 +1,9 @@
 #pragma once
-#include "/opt/homebrew/include/SDL2/SDL.h"
-#include "/opt/homebrew/include/SDL2/SDL_image.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <iostream>
 #include "sprite.h"
+#include "settings.h"
 
 class Tile : public Sprite {
 public:
@@ -53,7 +54,7 @@ public:
         if (createdInternally) SDL_FreeSurface(surface);
     }
 
-    void update() override {} 
+    void update() override {}
 
     void draw(SDL_Renderer* renderer, SDL_Point offset) override {
         SDL_Rect shifted = {
@@ -71,7 +72,7 @@ public:
     std::string getType() const { return sprite_type; }
     SDL_Rect getHitbox() const override { return hitbox; }
     std::shared_ptr<SDL_Texture> getTexture() const { return texture; }
-    
+
 private:
     std::string sprite_type;
     std::shared_ptr<SDL_Texture> texture;

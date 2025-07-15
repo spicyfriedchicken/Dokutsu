@@ -1,11 +1,12 @@
 #pragma once
-#include "/opt/homebrew/include/SDL2/SDL.h"
-#include "/opt/homebrew/include/SDL2/SDL_image.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <iostream>
 #include <vector>
 #include <algorithm>
 #include "entity.h"
 #include "support.h"
+#include "settings.h"
 
 class Weapon;
 class Magic;
@@ -13,12 +14,15 @@ class Magic;
 class Player : public Entity {
 public:
     Player(SDL_Renderer* renderer,
-        SDL_Point pos,
-        std::function<void()> attack_callback,
-        std::function<void()> magic_callback = nullptr)
-        : renderer(renderer),
-        attack_callback(std::move(attack_callback)),
-        magic_callback(std::move(magic_callback)) {
+       SDL_Point pos,
+       std::function<void()> attack_callback,
+       std::function<void()> destroy_callback = nullptr,
+	   std::function<void()> magic_callback = nullptr)
+    : renderer(renderer),
+      attack_callback(std::move(attack_callback)),
+      magic_callback(std::move(magic_callback)),
+      destroy_callback(std::move(destroy_callback)) {
+
 
 
         SDL_Surface* tempSurface = IMG_Load("./graphics/test/player.png");
@@ -52,7 +56,7 @@ public:
             { "right", {} }, { "right_idle", {} }, { "right_attack", {} },
         };
 
-        import_player_assets(); 
+        import_player_assets();
     }
 
 void import_player_assets() {
@@ -61,6 +65,11 @@ void import_player_assets() {
     for (auto& [k, v] : animations) {
         std::string completePath = path + k;
         std::vector<std::filesystem::directory_entry> entries;
+std::error_code ec;
+if (!std::filesystem::exists(completePath, ec)) {
+    std::cerr << "player::import_player_assets: missing animation folder at: " << completePath << "\n";
+    continue;
+}
 
         for (const auto& entry : std::filesystem::directory_iterator(completePath)) {
             if (entry.is_regular_file()) entries.push_back(entry);
@@ -75,7 +84,6 @@ void import_player_assets() {
         for (const auto& entry : entries) {
             std::string full_path = entry.path().string();
             std::shared_ptr<SDL_Surface> image(IMG_Load(full_path.c_str()), SDL_FreeSurface);
-            std::cout << "Loading: " << full_path << std::endl;
 
             if (!image) {
                 std::cerr << "Failed to load image: " << full_path << " | " << IMG_GetError() << std::endl;
@@ -113,6 +121,13 @@ void import_player_assets() {
 
 
 void animate() {
+    if (!vulnerable) {
+        int alpha = (SDL_GetTicks() / 100) % 2 ? 128 : 255; // blink every ~100ms
+        SDL_SetTextureAlphaMod(texture.get(), alpha);
+    } else {
+        SDL_SetTextureAlphaMod(texture.get(), 255);
+    }
+
     auto& animation = animations[status];
     int anim_size = static_cast<int>(animation.size());
     if (anim_size == 0) return;
@@ -128,9 +143,19 @@ void animate() {
 
     if (new_frame != current_frame) {
         current_frame = new_frame;
-        auto& surface = animation[current_frame];
+auto& surface = animation[current_frame];
 
-        texture.reset(SDL_CreateTextureFromSurface(renderer, surface.get()), SDL_DestroyTexture);
+if (!surface) {
+    std::cerr << "[ERROR] Null surface in animation[" << status << "] at frame " << current_frame << "\n";
+    return;
+}
+
+texture.reset(SDL_CreateTextureFromSurface(renderer, surface.get()), SDL_DestroyTexture);
+if (!texture) {
+    std::cerr << "[ERROR] Failed to create texture from surface at frame " << current_frame << ": " << SDL_GetError() << "\n";
+    return;
+}
+
         rect.w = surface->w;
         rect.h = surface->h;
         rect.x = hitbox.x + hitbox.w / 2 - rect.w / 2;
@@ -218,19 +243,29 @@ void animate() {
 
     void cooldowns() {
         Uint32 currentTime = SDL_GetTicks();
+
         if (currentTime - attackTime >= attack_cooldown) {
             attacking = false;
+            if (destroy_callback) destroy_callback();
         }
+
         if (currentTime - magic_cast_time >= magic_cooldown) {
             casting_magic = false;
         }
+
         if (currentTime - weaponSwapTime >= swap_cooldown) {
             weapon_swapping = false;
         }
+
         if (currentTime - magicSwapTime >= swap_cooldown) {
             magic_swapping = false;
         }
+
+        if (!vulnerable && currentTime - hurt_time >= invulnerability_duration) {
+            vulnerable = true;
+        }
     }
+
 
     // Main update loop
 
@@ -247,8 +282,29 @@ void animate() {
         }
 
         cooldowns();
-        get_status();  
-        animate(); 
+        get_status();
+        animate();
+    }
+
+void takeDamage(int amount) {
+    if (vulnerable) {
+        stats.health -= amount;
+        if (stats.health < 0) {
+			stats.health = 0;
+			alive = false;
+		}
+        vulnerable = false;
+        hurt_time = SDL_GetTicks();
+    }
+}
+
+
+    bool useMana(int amount) {
+        if (mana >= amount) {
+            mana -= amount;
+            return true;
+        }
+        return false;
     }
 
 
@@ -258,13 +314,15 @@ void animate() {
     std::shared_ptr<SDL_Texture> getTexture() const { return texture; }
     SDL_Rect getHitbox() const override { return hitbox; }
     std::string getStatus() const { return status; }
+	bool isAlive() const { return alive; }
+	SDL_Point getDirection() const { return direction; }
 
     SDL_Point getCenter() const {
         return {
             rect.x + rect.w / 2,
             rect.y + rect.h / 2
         };
-    }   
+    }
 
 
     // Member Variables for State Management
@@ -291,9 +349,9 @@ void animate() {
     std::string status = "down";
     int current_frame = -1;
 
-    int weapon_index = 0; 
+    int weapon_index = 0;
     int magic_index = 0;
-    std::shared_ptr<Weapon> currentWeapon; 
+    std::shared_ptr<Weapon> currentWeapon;
 
     // Stats
 
@@ -301,13 +359,22 @@ void animate() {
     int exp = 123;
     int maximumHealth = 100;
     int maximumMana = 60;
- 
+
+    bool vulnerable = true;
+    Uint32 hurt_time = 0;
+    Uint32 invulnerability_duration = 500; // ms
+
+    float mana = stats.mana;
+	bool alive = true;
+
+
 private:
     std::shared_ptr<SDL_Texture> texture;
     std::unordered_map<std::string, std::vector<std::shared_ptr<SDL_Surface>>> animations;
     SDL_Renderer* renderer = nullptr;
     SDL_Rect rect;
     std::function<void()> attack_callback;
+    std::function<void()> destroy_callback;
     std::function<void()> magic_callback;
 };
 
@@ -317,9 +384,10 @@ std::shared_ptr<Player> createPlayer(
     std::initializer_list<SpriteGroup*> groups,
     SpriteGroup* obstacles,
     std::function<void()> attack_callback,
+    std::function<void()> destroy_callback,
     std::function<void()> magic_callback
 ) {
-    auto player = std::make_shared<Player>(renderer, pos, attack_callback, magic_callback);
+    auto player = std::make_shared<Player>(renderer, pos, attack_callback, destroy_callback, magic_callback);
     player->obstacleGroup = obstacles;
 
     for (auto* group : groups) {

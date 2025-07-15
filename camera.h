@@ -5,7 +5,7 @@
 #include "weapon.h"
 #include "enemy.h"
 #include "settings.h"
-#include "/opt/homebrew/include/SDL2/SDL.h"
+#include <SDL2/SDL.h>
 #include <iostream>
 #include <vector>
 #include <memory>

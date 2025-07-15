@@ -1,6 +1,6 @@
 #pragma once
-#include "/opt/homebrew/include/SDL2/SDL.h"
-#include "/opt/homebrew/include/SDL2/SDL_image.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <iostream>
 #include <memory>
 #include "sprite.h"
@@ -11,7 +11,6 @@ public:
     Magic(SDL_Renderer* renderer, std::shared_ptr<Player> player, const std::string& texture_path = "") {
         SDL_Surface* surface = nullptr;
         bool createdInternally = false;
-        std::cout << "Magic constructor called" << std::endl;
         if (texture_path.empty()) {
             surface = SDL_CreateRGBSurface(0, 40, 40, 32, 0, 0, 0, 0);
             if (!surface) {

@@ -1,7 +1,7 @@
 #pragma once
-#include "/opt/homebrew/include/SDL2/SDL.h"
-#include "/opt/homebrew/include/SDL2/SDL_image.h"
-#include <SDL_ttf.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 
 #include "settings.h"
 #include "player.h"
@@ -133,7 +133,7 @@ private:
 
         last_exp = current_exp;
         std::string exp_text = std::to_string(current_exp);
-        SDL_Color color = {32, 32, 32, 255}; 
+        SDL_Color color = {32, 32, 32, 255};
 
         SDL_Surface* surface = TTF_RenderText_Solid(font, exp_text.c_str(), color);
         if (!surface) return;

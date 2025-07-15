@@ -57,7 +57,7 @@ std::unordered_map<std::string, std::string> magic_graphics = {
 struct EnemyStats {
     int health;
     int exp;
-    int damage;
+    int attack_damage;
     std::string attack_type;
     std::string attack_sound;
     int speed;

@@ -1,7 +1,8 @@
 #pragma once
-#include "/opt/homebrew/include/SDL2/SDL.h"
+#include <SDL2/SDL.h>
 #include <vector>
 #include <memory>
+#include <algorithm>
 
 class Sprite {
 public:
@@ -14,7 +15,7 @@ public:
 };
 
 class SpriteGroup {
-public:    
+public:
     void add(std::shared_ptr<Sprite> sprite) {
         sprites.push_back(sprite);
     }
@@ -47,4 +48,3 @@ public:
 private:
     std::vector<std::shared_ptr<Sprite>> sprites;
 };
-

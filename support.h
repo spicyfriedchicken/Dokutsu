@@ -1,9 +1,10 @@
 #pragma once
-#include <fstream>     
-#include <sstream>     
-#include <string>      
-#include <vector>      
-#include "/opt/homebrew/include/SDL2/SDL.h"
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <filesystem>
 #include <iostream>
 
