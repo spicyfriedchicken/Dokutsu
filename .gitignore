@@ -1,4 +1,6 @@
 /graphics/
 /.vscode/
+/audio/
+/.idea/
 /map/
 main.o
