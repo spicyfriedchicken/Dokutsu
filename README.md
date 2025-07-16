@@ -1,4 +1,4 @@
-# 🕹️ Dōkutsu
+# 🕹️ Dōkutsu (In-Progress, Phase II)
 
 **Dōkutsu** (洞窟) is a handcrafted 2D dungeon action game written in modern C++ with SDL2. Players explore a hostile, monster-infested world (soon-to-be cave system), wielding weapons and magic to survive and grow stronger.
 
@@ -43,17 +43,16 @@
 
 ---
 
-## 🔧 Tech Stack
+## 🔧 Upcoming Fixes/Improvements
 
-| Component      | Description                        |
-|----------------|------------------------------------|
-| **Language**   | C++17                              |
-| **Graphics**   | SDL2 + SDL_image                   |
-| **UI**         | Custom HUD with health/mana bars   |
-| **Entity System** | Polymorphic base sprite classes |
-| **Tilemap**    | CSV-based layout loading           |
-| **Animation**  | Directory-based frame parsing      |
-| **Build**      | Simple Makefile or CMake (TBD)     |
+| Bug                                                          | Completed? |
+|----------------|---------------------------------------------|
+| Weapon spawn desynchronized with player animation and status |
+| Magic Spell-Casting un-implemented                           |
+| Enemies ignore obstacles, A* path-finding needed             |
+| Enemies 'teleport' when attacked, animate displacement       |
+| Animate Enemy invulnerability, just like the Player          |
+| Enemy particle and death animation unimplemented             |
 
 ---
 
