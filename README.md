@@ -1,6 +1,6 @@
 # 🕹️ Dōkutsu
 
-**Dōkutsu** (洞窟) is a handcrafted 2D dungeon action game written in modern C++ with SDL2. Players explore a hostile, monster-infested cave system, wielding weapons and magic to survive and grow stronger.
+**Dōkutsu** (洞窟) is a handcrafted 2D dungeon action game written in modern C++ with SDL2. Players explore a hostile, monster-infested world (soon-to-be cave system), wielding weapons and magic to survive and grow stronger.
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/be55369a-0f7b-4e82-a008-a03845387389" alt="dying" height="300"/>
