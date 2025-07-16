@@ -41,6 +41,10 @@
 - Keyboard movement (`Arrow Keys`)
 - Attack with `Space` / `Tab`, cast magic with `E`
 
+### ❌ Multiplayer (Coming Soon!)
+- Synchronized server state across multiple players
+- Hero/Class selection including Warrior, Healer, Assassin
+
 ---
 
 ## 🔧 Upcoming Fixes/Improvements
