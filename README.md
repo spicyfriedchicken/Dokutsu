@@ -117,6 +117,5 @@ Dōkutsu draws inspiration from classic dungeon crawlers and modern pixel-art in
 
 ## 🙌 Credits
 
-Made with ❤️ by Oscar Abreu
-Assets using Tiled and PixelBoy and AAA's Assets.
-https://pixel-boy.itch.io/ninja-adventure-asset-pack
+Made with ❤️ by Oscar Abreu <br>
+[Assets using Tiled and PixelBoy and AAA's Assets](https://pixel-boy.itch.io/ninja-adventure-asset-pack)
