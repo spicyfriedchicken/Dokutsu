@@ -11,6 +11,20 @@
 class Weapon;
 class Magic;
 
+enum class PlayerActionState {
+	Idle,
+	Moving,
+	Attacking,
+	Casting
+};
+
+enum class Direction {
+	Up,
+	Down,
+	Left,
+	Right
+};
+
 class Player : public Entity {
 public:
     Player(SDL_Renderer* renderer,
@@ -96,33 +110,44 @@ if (!std::filesystem::exists(completePath, ec)) {
         v = std::move(surface_list);
     }
 }
-
-    // Animations
-    void get_status() {
-        std::string old_status = status;
-        std::string base_direction;
-
-        if (direction.x < 0)      base_direction = "left";
-        else if (direction.x > 0) base_direction = "right";
-        else if (direction.y < 0) base_direction = "up";
-        else if (direction.y > 0) base_direction = "down";
-        else                      base_direction = status.substr(0, status.find('_'));
-
-        if (attacking || casting_magic) {
-            status = base_direction + "_attack";
-        } else if (direction.x == 0 && direction.y == 0) {
-            status = base_direction + "_idle";
-        } else {
-            status = base_direction;
-        }
+void updateAnimationStatus() {
+    std::string dirStr;
+    switch (facingDirection) {
+        case Direction::Up:    dirStr = "up"; break;
+        case Direction::Down:  dirStr = "down"; break;
+        case Direction::Left:  dirStr = "left"; break;
+        case Direction::Right: dirStr = "right"; break;
     }
+
+    std::string newStatus;
+    switch (actionState) {
+        case PlayerActionState::Idle:
+            newStatus = dirStr + "_idle";
+            break;
+        case PlayerActionState::Moving:
+            newStatus = dirStr;
+            break;
+        case PlayerActionState::Attacking:
+            newStatus = dirStr + "_attack";
+            break;
+        case PlayerActionState::Casting:
+            newStatus = dirStr + "_attack"; // same for now
+            break;
+    }
+
+    if (newStatus != status) {
+        status = newStatus;
+        frame_index = 0.0f;
+        current_frame = -1;
+    }
+}
 
 
 
 
 void animate() {
     if (!vulnerable) {
-        int alpha = (SDL_GetTicks() / 100) % 2 ? 128 : 255; // blink every ~100ms
+        int alpha = (SDL_GetTicks() / 100) % 2 ? 128 : 255;
         SDL_SetTextureAlphaMod(texture.get(), alpha);
     } else {
         SDL_SetTextureAlphaMod(texture.get(), 255);
@@ -146,7 +171,6 @@ void animate() {
 auto& surface = animation[current_frame];
 
 if (!surface) {
-    std::cerr << "[ERROR] Null surface in animation[" << status << "] at frame " << current_frame << "\n";
     return;
 }
 
@@ -179,50 +203,61 @@ if (!texture) {
 
 // Input Handling
 
-    void handleInput() {
+void handleInput() {
+    const Uint8* keystate = SDL_GetKeyboardState(NULL);
+    bool spaceDown = keystate[SDL_SCANCODE_SPACE];
+    bool magicDown = keystate[SDL_SCANCODE_E];
+
+    direction = {0, 0};
+    SDL_Point rawDir = {0, 0};
+
+    if (keystate[SDL_SCANCODE_UP])    rawDir.y = -1;
+    if (keystate[SDL_SCANCODE_DOWN])  rawDir.y =  1;
+    if (keystate[SDL_SCANCODE_LEFT])  rawDir.x = -1;
+    if (keystate[SDL_SCANCODE_RIGHT]) rawDir.x =  1;
+
+    // Normalize movement direction and update facing
+    if (rawDir.x != 0 || rawDir.y != 0) {
+        updateFacingDirection(rawDir);
+        if (!attacking && !casting) {
+            float len = SDL_sqrtf(rawDir.x * rawDir.x + rawDir.y * rawDir.y);
+            direction = { static_cast<float>(rawDir.x), static_cast<float>(rawDir.y) };
+
+if (len > 0.0f) {
+    normalizedDirection = {
+        direction.x / len,
+        direction.y / len
+    };
+} else {
+    normalizedDirection = {0.0f, 0.0f};
+}
+
+            actionState = PlayerActionState::Moving;
+        }
+    } else if (!attacking && !casting) {
         direction = {0, 0};
-        const Uint8* keystate = SDL_GetKeyboardState(NULL);
-        bool spaceDown = keystate[SDL_SCANCODE_SPACE] || keystate[SDL_SCANCODE_TAB];
-        bool magicDown = keystate[SDL_SCANCODE_E];
+        actionState = PlayerActionState::Idle;
+    }
 
-        // Attack logic
-        if (spaceDown && !attack_button_held && !attacking && !casting_magic) {
-            attacking = true;
-            attackTime = SDL_GetTicks();
-            if (attack_callback) attack_callback();
-        }
+    // Handle attack state
+    if (spaceDown && !attack_button_held && !attacking && !casting) {
+        attacking = true;
+        attackTime = SDL_GetTicks();
+        actionState = PlayerActionState::Attacking;
+        if (attack_callback) attack_callback();
+    }
 
-        attack_button_held = spaceDown;
+    attack_button_held = spaceDown;
 
-        // Magic logic
-        if (magicDown && !magic_button_held && !casting_magic && !attacking) {
-            casting_magic = true;
-            magic_cast_time = SDL_GetTicks();
-            if (magic_callback) magic_callback();
-        }
+    // Handle magic state
+    if (magicDown && !magic_button_held && !casting && !attacking) {
+        casting = true;
+        magicCastTime = SDL_GetTicks();
+        actionState = PlayerActionState::Casting;
+        if (magic_callback) magic_callback();
+    }
 
-        magic_button_held = magicDown;
-
-        if (!attacking && !casting_magic) {
-            // Movement
-            if (keystate[SDL_SCANCODE_UP]) direction.y = -1;
-            else if (keystate[SDL_SCANCODE_DOWN]) direction.y = 1;
-            if (keystate[SDL_SCANCODE_LEFT]) direction.x = -1;
-            else if (keystate[SDL_SCANCODE_RIGHT]) direction.x = 1;
-
-            if (direction.x < 0)      status = "left";
-            else if (direction.x > 0) status = "right";
-            else if (direction.y < 0) status = "up";
-            else if (direction.y > 0) status = "down";
-
-            if (direction.x != 0 || direction.y != 0) {
-                float len = SDL_sqrtf(direction.x * direction.x + direction.y * direction.y);
-                normalizedDirection.x = direction.x / len;
-                normalizedDirection.y = direction.y / len;
-            } else {
-                normalizedDirection = {};
-            }
-        }
+    magic_button_held = magicDown;
 
         // Weapon swap
         if (keystate[SDL_SCANCODE_Q] && !weapon_swapping) {
@@ -241,50 +276,63 @@ if (!texture) {
 
 
 
-    void cooldowns() {
-        Uint32 currentTime = SDL_GetTicks();
+void cooldowns() {
+    Uint32 currentTime = SDL_GetTicks();
 
-        if (currentTime - attackTime >= attack_cooldown) {
-            attacking = false;
-            if (destroy_callback) destroy_callback();
-        }
+    if (attacking && currentTime - attackTime >= attack_cooldown) {
+        attacking = false;
+        if (actionState == PlayerActionState::Attacking)
+            actionState = PlayerActionState::Idle;
 
-        if (currentTime - magic_cast_time >= magic_cooldown) {
-            casting_magic = false;
-        }
-
-        if (currentTime - weaponSwapTime >= swap_cooldown) {
-            weapon_swapping = false;
-        }
-
-        if (currentTime - magicSwapTime >= swap_cooldown) {
-            magic_swapping = false;
-        }
-
-        if (!vulnerable && currentTime - hurt_time >= invulnerability_duration) {
-            vulnerable = true;
-        }
+        if (destroy_callback) destroy_callback();
     }
 
-
-    // Main update loop
-
-    void update() override {
-        if (!attacking && !casting_magic) {
-            move(normalizedDirection.x * speed, 0);
-            handleCollision('x');
-            move(0, normalizedDirection.y * speed);
-            handleCollision('y');
-
-            int insetY = 10;
-            rect.x = hitbox.x;
-            rect.y = hitbox.y - insetY;
-        }
-
-        cooldowns();
-        get_status();
-        animate();
+    if (casting && currentTime - magicCastTime >= magic_cooldown) {
+        casting = false;
+        if (actionState == PlayerActionState::Casting)
+            actionState = PlayerActionState::Idle;
     }
+
+    if (weapon_swapping && currentTime - weaponSwapTime >= swap_cooldown) {
+        weapon_swapping = false;
+    }
+
+    if (magic_swapping && currentTime - magicSwapTime >= swap_cooldown) {
+        magic_swapping = false;
+    }
+
+    if (!vulnerable && currentTime - hurt_time >= invulnerability_duration) {
+        vulnerable = true;
+    }
+}
+
+
+
+void updateFacingDirection(const SDL_Point& dir) {
+	if (attacking) return;
+    if (dir.x > 0)      facingDirection = Direction::Right;
+    else if (dir.x < 0) facingDirection = Direction::Left;
+    else if (dir.y > 0) facingDirection = Direction::Down;
+    else if (dir.y < 0) facingDirection = Direction::Up;
+}
+
+void update() override {
+    if (!attacking && !casting) {
+        move(normalizedDirection.x * speed, 0);
+        handleCollision('x');
+        move(0, normalizedDirection.y * speed);
+        handleCollision('y');
+
+        int insetY = 10;
+        rect.x = hitbox.x;
+        rect.y = hitbox.y - insetY;
+    }
+
+    cooldowns();
+    updateAnimationStatus();
+    animate();
+}
+
 
 void takeDamage(int amount) {
     if (vulnerable) {
@@ -300,8 +348,8 @@ void takeDamage(int amount) {
 
 
     bool useMana(int amount) {
-        if (mana >= amount) {
-            mana -= amount;
+        if (stats.mana >= amount) {
+            stats.mana -= amount;
             return true;
         }
         return false;
@@ -315,7 +363,7 @@ void takeDamage(int amount) {
     SDL_Rect getHitbox() const override { return hitbox; }
     std::string getStatus() const { return status; }
 	bool isAlive() const { return alive; }
-	SDL_Point getDirection() const { return direction; }
+	SDL_FPoint getDirection() const { return direction; }
 
     SDL_Point getCenter() const {
         return {
@@ -327,44 +375,47 @@ void takeDamage(int amount) {
 
     // Member Variables for State Management
 
+
     float speed = 5.0f;
-    SDL_Point direction{0, 0};
+    SDL_FPoint direction{0, 0};
+	SDL_FPoint normalizedDirection = {0, 0};
+	std::string status = "down";
 
     bool attacking = false;
     bool attack_button_held = false;
     Uint32 attackTime;
     Uint32 attack_cooldown = 400;
 
-    bool casting_magic = false;
+    bool casting = false;
     bool magic_button_held = false;
-    Uint32 magic_cast_time;
-    Uint32 magic_cooldown = 600;
+    Uint32 magicCastTime;;
+    Uint32 magic_cooldown = 400;
+
 
     bool weapon_swapping = false;
     bool magic_swapping = false;
+	Uint32 swap_cooldown = 400;
     Uint32 weaponSwapTime;
     Uint32 magicSwapTime;
-    Uint32 swap_cooldown = 400;
 
-    std::string status = "down";
-    int current_frame = -1;
+	PlayerActionState actionState = PlayerActionState::Idle;
+	Direction facingDirection = Direction::Down;
 
+	int current_frame = -1;
     int weapon_index = 0;
     int magic_index = 0;
+
     std::shared_ptr<Weapon> currentWeapon;
-
-    // Stats
-
     PlayerStats stats;
-    int exp = 123;
+
+    int exp = 0;
     int maximumHealth = 100;
     int maximumMana = 60;
 
     bool vulnerable = true;
     Uint32 hurt_time = 0;
-    Uint32 invulnerability_duration = 500; // ms
+    Uint32 invulnerability_duration = 400;
 
-    float mana = stats.mana;
 	bool alive = true;
 
 
