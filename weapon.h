@@ -54,7 +54,7 @@ public:
             rect.x = player_rect.x - rect.w;
             rect.y = player_rect.y + (player_rect.h / 2) + 4.5;
         } else if (status == "down") {
-            rect.x = player_rect.x + (player_rect.w / 2) + 9;
+            rect.x = player_rect.x + (player_rect.w / 2) - 27;
             rect.y = player_rect.y + player_rect.h;
         } else {
             rect.x = player_rect.x + 9;

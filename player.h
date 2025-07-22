@@ -79,11 +79,11 @@ void import_player_assets() {
     for (auto& [k, v] : animations) {
         std::string completePath = path + k;
         std::vector<std::filesystem::directory_entry> entries;
-std::error_code ec;
-if (!std::filesystem::exists(completePath, ec)) {
-    std::cerr << "player::import_player_assets: missing animation folder at: " << completePath << "\n";
-    continue;
-}
+        std::error_code ec;
+        if (!std::filesystem::exists(completePath, ec)) {
+            std::cerr << "player::import_player_assets: missing animation folder at: " << completePath << "\n";
+            continue;
+        }
 
         for (const auto& entry : std::filesystem::directory_iterator(completePath)) {
             if (entry.is_regular_file()) entries.push_back(entry);
@@ -141,9 +141,6 @@ void updateAnimationStatus() {
         current_frame = -1;
     }
 }
-
-
-
 
 void animate() {
     if (!vulnerable) {
@@ -223,21 +220,23 @@ void handleInput() {
             float len = SDL_sqrtf(rawDir.x * rawDir.x + rawDir.y * rawDir.y);
             direction = { static_cast<float>(rawDir.x), static_cast<float>(rawDir.y) };
 
-if (len > 0.0f) {
-    normalizedDirection = {
-        direction.x / len,
-        direction.y / len
-    };
-} else {
-    normalizedDirection = {0.0f, 0.0f};
-}
+            if (len > 0.0f) {
+                normalizedDirection = {
+                    direction.x / len,
+                    direction.y / len
+                };
+            } else {
+                normalizedDirection = {0.0f, 0.0f};
+            }
 
             actionState = PlayerActionState::Moving;
         }
     } else if (!attacking && !casting) {
         direction = {0, 0};
+        normalizedDirection = {0.0f, 0.0f};  // <-- ADD THIS
         actionState = PlayerActionState::Idle;
     }
+
 
     // Handle attack state
     if (spaceDown && !attack_button_held && !attacking && !casting) {
@@ -259,22 +258,20 @@ if (len > 0.0f) {
 
     magic_button_held = magicDown;
 
-        // Weapon swap
-        if (keystate[SDL_SCANCODE_Q] && !weapon_swapping) {
-            weapon_swapping = true;
-            weaponSwapTime = SDL_GetTicks();
-            weapon_index = (1 + weapon_index) % weapons.size();
-        }
-
-        // Magic swap
-        if (keystate[SDL_SCANCODE_W] && !magic_swapping) {
-            magic_swapping = true;
-            magicSwapTime = SDL_GetTicks();
-            magic_index = (1 + magic_index) % magic.size();
-        }
+    // Weapon swap
+    if (keystate[SDL_SCANCODE_Q] && !weapon_swapping) {
+        weapon_swapping = true;
+        weaponSwapTime = SDL_GetTicks();
+        weapon_index = (1 + weapon_index) % weapons.size();
     }
 
-
+    // Magic swap
+    if (keystate[SDL_SCANCODE_W] && !magic_swapping) {
+        magic_swapping = true;
+        magicSwapTime = SDL_GetTicks();
+        magic_index = (1 + magic_index) % magic.size();
+    }
+}
 
 void cooldowns() {
     Uint32 currentTime = SDL_GetTicks();
@@ -374,7 +371,6 @@ void takeDamage(int amount) {
 
 
     // Member Variables for State Management
-
 
     float speed = 5.0f;
     SDL_FPoint direction{0, 0};

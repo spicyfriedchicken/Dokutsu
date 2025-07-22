@@ -146,82 +146,78 @@ public:
 		 triggerAttack();
     }
 
-void update(SDL_Point player_center) {
-	if (!alive) return;
-    auto [distance, direction] = getPlayerDistanceAndDirection(player_center);
-    Uint32 now = SDL_GetTicks();
-    can_attack = (now - last_attack_time >= attack_cooldown);
+    void update(SDL_Point player_center) {
+        if (!alive) return;
+        auto [distance, direction] = getPlayerDistanceAndDirection(player_center);
+        Uint32 now = SDL_GetTicks();
+        can_attack = (now - last_attack_time >= attack_cooldown);
 
-    update_status(distance);
+        update_status(distance);
 
-    if (status == "move") {
-        move_toward_player(direction);
-    }
-
-    animate();  // attack() + triggerAttack() gets called here
-}
-
-
-void animate() {
-    auto& animation = animations[status];
-    int anim_size = static_cast<int>(animation.size());
-    if (anim_size == 0) return;
-
-    frame_index += animation_speed;
-
-    if (frame_index >= anim_size) {
-        frame_index = 0.0f;
-    }
-
-    int new_frame = static_cast<int>(frame_index);
-    if (new_frame >= anim_size) new_frame = anim_size - 1;
-
-    if (new_frame != current_frame) {
-        current_frame = new_frame;
-        auto& surface = animation[current_frame];
-        if (!surface) {
-            std::cerr << "within enemy::animate, null surface at frame " << current_frame << " for " << status << "\n";
-            return;
+        if (status == "move") {
+            move_toward_player(direction);
         }
 
-        texture.reset(SDL_CreateTextureFromSurface(renderer, surface.get()), SDL_DestroyTexture);
-        if (!texture) {
-            std::cerr << "within enemy::animate, failed to create texture from frame.\n";
-            return;
+        animate();  // attack() + triggerAttack() gets called here
+    }
+
+
+    void animate() {
+        auto& animation = animations[status];
+        int anim_size = static_cast<int>(animation.size());
+        if (anim_size == 0) return;
+
+        frame_index += animation_speed;
+
+        if (frame_index >= anim_size) {
+            frame_index = 0.0f;
         }
 
-        rect.w = surface->w;
-        rect.h = surface->h;
+        int new_frame = static_cast<int>(frame_index);
+        if (new_frame >= anim_size) new_frame = anim_size - 1;
+
+        if (new_frame != current_frame) {
+            current_frame = new_frame;
+            auto& surface = animation[current_frame];
+            if (!surface) {
+                std::cerr << "within enemy::animate, null surface at frame " << current_frame << " for " << status << "\n";
+                return;
+            }
+
+            texture.reset(SDL_CreateTextureFromSurface(renderer, surface.get()), SDL_DestroyTexture);
+            if (!texture) {
+                std::cerr << "within enemy::animate, failed to create texture from frame.\n";
+                return;
+            }
+
+            rect.w = surface->w;
+            rect.h = surface->h;
+            rect.x = hitbox.x + hitbox.w / 2 - rect.w / 2;
+            rect.y = hitbox.y + hitbox.h / 2 - rect.h / 2;
+        }
+
+        if (status == "attack" && current_frame == anim_size - 1) {
+            if (attacking) {
+                attack();  // call once at end
+                attacking = false;
+                can_attack = false;
+                last_attack_time = SDL_GetTicks();
+            }
+            status = "idle";
+            frame_index = 0.0f;
+        }
+    }
+
+    void applyKnockback(SDL_FPoint source_dir, int force = 100) {
+        float dx = source_dir.x * force;
+        float dy = source_dir.y * force;
+
+        hitbox.x += static_cast<int>(dx);
+        hitbox.y += static_cast<int>(dy);
+
         rect.x = hitbox.x + hitbox.w / 2 - rect.w / 2;
         rect.y = hitbox.y + hitbox.h / 2 - rect.h / 2;
     }
-
-    if (status == "attack" && current_frame == anim_size - 1) {
-        if (attacking) {
-            attack();  // call once at end
-            attacking = false;
-            can_attack = false;
-            last_attack_time = SDL_GetTicks();
-        }
-        status = "idle";
-        frame_index = 0.0f;
-    }
-}
-
-void applyKnockback(SDL_FPoint source_dir, int force = 100) {
-    float dx = source_dir.x * force;
-    float dy = source_dir.y * force;
-
-    hitbox.x += static_cast<int>(dx);
-    hitbox.y += static_cast<int>(dy);
-
-    rect.x = hitbox.x + hitbox.w / 2 - rect.w / 2;
-    rect.y = hitbox.y + hitbox.h / 2 - rect.h / 2;
-}
-
-
-
-
 
     void draw(SDL_Renderer* renderer, SDL_Point offset) override {
         SDL_Rect shifted = {
