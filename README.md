@@ -1,4 +1,4 @@
-# 🕹️ Dōkutsu (In-Progress, Phase II)
+# Dōkutsu (In-Progress, Phase II)
 
 **Dōkutsu** (洞窟) is a handcrafted 2D dungeon action game written in modern C++ with SDL2. Players explore a hostile, monster-infested world (soon-to-be cave system), wielding weapons and magic to survive and grow stronger.
 
@@ -9,7 +9,7 @@
 
 ---
 
-## 🎮 Gameplay Overview
+## Gameplay Overview
 
 - **Real-Time Combat**: Engage in dynamic melee combat using swappable weapons like swords, lances, and sais.
 - **Enemy AI**: Fight against different enemies like spirits, raccoons, squids, and bamboo creatures—each with unique attack patterns and animations.
@@ -19,35 +19,35 @@
 
 ---
 
-## 📦 Features
+## Features
 
-### ✅ Core Mechanics
+### Core Mechanics
 - Directional movement and attack inputs
 - Swappable weapons (`Q`) and magic (`W`)
 - Magic and melee attack cooldowns
 - Knockback system on successful hits
 
-### ✅ Enemy System
+### Enemy System
 - Intelligent behavior: enemies idle, chase, and attack based on proximity
 - Frame-based animation and attack triggers
 - Damage, knockback, invulnerability frames
 
-### ✅ Visual Rendering
+### Visual Rendering
 - Layered tilemap rendering (floor, grass, objects)
 - Depth-based draw ordering of all visible sprites
 - Real-time UI showing health, mana, and equipment
 
-### ✅ Input Handling
+### Input Handling
 - Keyboard movement (`Arrow Keys`)
 - Attack with `Space` / `Tab`, cast magic with `E`
 
-### ❌ Multiplayer (Coming Soon!)
+### Multiplayer (Coming Soon!)
 - Synchronized server state across multiple players
 - Hero/Class selection including Warrior, Healer, Assassin
 
 ---
 
-## 🔧 Upcoming Fixes/Improvements
+## Upcoming Fixes/Improvements
 
 | Bug                                                          | Completed? |
 |----------------|---------------------------------------------|
@@ -60,7 +60,7 @@
 
 ---
 
-## 🗺️ Map System
+## Map System
 
 The game loads static tiles and enemies from CSV map layouts:
 - `map/map_FloorBlocks.csv` – boundaries
@@ -70,7 +70,7 @@ The game loads static tiles and enemies from CSV map layouts:
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 .
@@ -93,7 +93,7 @@ The game loads static tiles and enemies from CSV map layouts:
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Requirements
 
@@ -111,14 +111,14 @@ g++ -std=c++17 -lSDL2 -lSDL2_image -o dokutsu main.cpp
 
 ---
 
-## 🧠 Inspirations
+## Inspirations
 
 Dōkutsu draws inspiration from classic dungeon crawlers and modern pixel-art indie games. Its architecture emphasizes modularity, OOP principles, and real-time rendering performance.
 
 ---
 
 
-## 🙌 Credits
+## Credits
 
-Made with ❤️ by Oscar Abreu <br>
+Made with ❤️  by Oscar Abreu <br>
 [Assets using Tiled and PixelBoy and AAA's Assets](https://pixel-boy.itch.io/ninja-adventure-asset-pack)
