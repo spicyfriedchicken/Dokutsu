@@ -142,47 +142,48 @@ void updateAnimationStatus() {
     }
 }
 
-void animate() {
-    if (!vulnerable) {
-        int alpha = (SDL_GetTicks() / 100) % 2 ? 128 : 255;
-        SDL_SetTextureAlphaMod(texture.get(), alpha);
-    } else {
-        SDL_SetTextureAlphaMod(texture.get(), 255);
+    void animate() {
+        // Flashing effect when player is invulnerable
+        if (!vulnerable) {
+            int alpha = (SDL_GetTicks() / 100) % 2 ? 128 : 255;
+            SDL_SetTextureAlphaMod(texture.get(), alpha);
+        } else {
+            SDL_SetTextureAlphaMod(texture.get(), 255);
+        }
+
+        // Grab the animation frames for the current status
+        auto& animation = animations[status];
+        int anim_size = static_cast<int>(animation.size());
+        if (anim_size == 0) return;
+
+        // Advance frame index
+        frame_index += animation_speed;
+        if (frame_index >= anim_size) {
+            frame_index = 0.0f;
+        }
+
+        int new_frame = static_cast<int>(frame_index);
+        if (new_frame >= anim_size) new_frame = anim_size - 1;
+
+        // Only update texture if frame changed
+        if (new_frame != current_frame) {
+            current_frame = new_frame;
+            auto& surface = animation[current_frame];
+            if (!surface) return;
+
+            texture.reset(SDL_CreateTextureFromSurface(renderer, surface.get()), SDL_DestroyTexture);
+            if (!texture) {
+                std::cerr << "[ERROR] Failed to create texture from surface at frame "
+                          << current_frame << ": " << SDL_GetError() << "\n";
+                return;
+            }
+
+            // Update only the size — leave position to be handled in Player::update()
+            rect.w = surface->w;
+            rect.h = surface->h;
+        }
     }
 
-    auto& animation = animations[status];
-    int anim_size = static_cast<int>(animation.size());
-    if (anim_size == 0) return;
-
-    frame_index += animation_speed;
-
-    if (frame_index >= anim_size) {
-        frame_index = 0.0f;
-    }
-
-    int new_frame = static_cast<int>(frame_index);
-    if (new_frame >= anim_size) new_frame = anim_size - 1;
-
-    if (new_frame != current_frame) {
-        current_frame = new_frame;
-auto& surface = animation[current_frame];
-
-if (!surface) {
-    return;
-}
-
-texture.reset(SDL_CreateTextureFromSurface(renderer, surface.get()), SDL_DestroyTexture);
-if (!texture) {
-    std::cerr << "[ERROR] Failed to create texture from surface at frame " << current_frame << ": " << SDL_GetError() << "\n";
-    return;
-}
-
-        rect.w = surface->w;
-        rect.h = surface->h;
-        rect.x = hitbox.x + hitbox.w / 2 - rect.w / 2;
-        rect.y = hitbox.y + hitbox.h / 2 - rect.h / 2;
-    }
-}
 
 
 
@@ -313,22 +314,26 @@ void updateFacingDirection(const SDL_Point& dir) {
     else if (dir.y < 0) facingDirection = Direction::Up;
 }
 
-void update() override {
-    if (!attacking && !casting) {
-        move(normalizedDirection.x * speed, 0);
-        handleCollision('x');
-        move(0, normalizedDirection.y * speed);
-        handleCollision('y');
+    void update() override {
+        if (!attacking && !casting) {
+            move(normalizedDirection.x * speed, 0);
+            handleCollision('x');
+            move(0, normalizedDirection.y * speed);
+            handleCollision('y');
 
-        int insetY = 10;
-        rect.x = hitbox.x;
-        rect.y = hitbox.y - insetY;
+            // Recenter the rect around the updated hitbox
+            rect.w = texture ? rect.w : hitbox.w;
+            rect.h = texture ? rect.h : hitbox.h;
+
+            rect.x = hitbox.x + hitbox.w / 2 - rect.w / 2;
+            rect.y = hitbox.y + hitbox.h / 2 - rect.h / 2;
+        }
+
+        cooldowns();
+        updateAnimationStatus();
+        animate();
     }
 
-    cooldowns();
-    updateAnimationStatus();
-    animate();
-}
 
 
 void takeDamage(int amount) {
@@ -380,17 +385,17 @@ void takeDamage(int amount) {
     bool attacking = false;
     bool attack_button_held = false;
     Uint32 attackTime;
-    Uint32 attack_cooldown = 400;
+    Uint32 attack_cooldown = 200;
 
     bool casting = false;
     bool magic_button_held = false;
-    Uint32 magicCastTime;;
-    Uint32 magic_cooldown = 400;
+    Uint32 magicCastTime;
+    Uint32 magic_cooldown = 200;
 
 
     bool weapon_swapping = false;
     bool magic_swapping = false;
-	Uint32 swap_cooldown = 400;
+	Uint32 swap_cooldown = 200;
     Uint32 weaponSwapTime;
     Uint32 magicSwapTime;
 
