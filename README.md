@@ -51,10 +51,10 @@
 
 | Bug                                                          | Completed? |
 |----------------|---------------------------------------------|
-| Weapon spawn desynchronized with player animation and status |
+| Weapon spawn desynchronized with player animation and status |   Yes
 | Magic Spell-Casting un-implemented                           |
-| Enemies ignore obstacles, A* path-finding needed             |
-| Enemies 'teleport' when attacked, animate displacement       |
+| Enemies ignore obstacles, A* path-finding needed             |   Yes
+| Enemies 'teleport' when attacked, animate displacement       |  
 | Animate Enemy invulnerability, just like the Player          |
 | Enemy particle and death animation unimplemented             |
 
