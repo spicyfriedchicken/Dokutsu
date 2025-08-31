@@ -4,4 +4,4 @@
 /.idea/
 /map/
 main.o
-networking/build/
+/networking/build/
