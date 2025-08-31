@@ -1,4 +1,5 @@
 #include <iostream>
+#include <mutex>
 #include <stdexcept>
 #include <utility>
 #include <shared_mutex>
@@ -46,7 +47,7 @@ private:
         ++size_;
     }
 
-    void pop_front() {
+    void pop_front_ul() {
         if (head_->next == tail_) return;
         Node* victim = head_->next;
         head_->next = victim->next;
@@ -55,7 +56,7 @@ private:
         --size_;
     }
 
-    void pop_back() {
+    void pop_back_ul() {
         if (tail_->prev == head_) return;
         Node* victim = tail_->prev;
         tail_->prev = victim->prev;
@@ -83,7 +84,7 @@ public:
     Deque& operator=(Deque&& other) noexcept {
         if (this != &other) {
             std::scoped_lock lk(mut_, other.mut_);
-            while (head_ && head_->next && head_->next != tail_) pop_front();
+            while (head_ && head_->next && head_->next != tail_) pop_front_ul();
             delete head_;
             delete tail_;
             head_ = std::exchange(other.head_, nullptr);
@@ -101,6 +102,16 @@ public:
     void push_back(const T& value) {
         std::unique_lock lk (mut_);
         emplace_back(value);
+    }
+
+    void pop_front() {
+        std::unique_lock lk(mut_);
+        pop_front_ul();
+    }
+
+    void pop_back() {
+        std::unique_lock lk(mut_);
+        pop_back_ul();
     }
 
     [[nodiscard]] T& front() {
@@ -130,7 +141,7 @@ public:
     void clear() {
         std::unique_lock lk (mut_);
         while (head_->next != tail_) {  // don't call empty()
-            pop_front();
+            pop_front_ul();
         }
     }
 
@@ -138,7 +149,7 @@ public:
     [[nodiscard]] size_t get_size() const noexcept { std::shared_lock lk (mut_); return size_; }
 
     ~Deque() {
-        while (head_ && head_->next && head_->next != tail_) pop_front();
+        while (head_ && head_->next && head_->next != tail_) pop_front_ul();
         if (head_) delete head_;
         if (tail_) delete tail_;
     }
