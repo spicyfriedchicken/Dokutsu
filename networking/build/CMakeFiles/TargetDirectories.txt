@@ -1,0 +1,3 @@
+/Users/oscarabreu/Code/Dokutsu/networking/build/CMakeFiles/asio_play.dir
+/Users/oscarabreu/Code/Dokutsu/networking/build/CMakeFiles/edit_cache.dir
+/Users/oscarabreu/Code/Dokutsu/networking/build/CMakeFiles/rebuild_cache.dir
